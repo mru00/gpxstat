@@ -13,6 +13,7 @@ package gpxstat.ui;
 import com.topografix.gpx.x1.x1.TrksegType;
 import com.topografix.gpx.x1.x1.WptType;
 import java.awt.Component;
+import java.text.DateFormat;
 import javax.swing.JSeparator;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
@@ -62,6 +63,9 @@ public class TrksegPanel extends javax.swing.JPanel {
             elevationVect[i] = w.getEle().doubleValue();
         }
 
+        if (trkseg.getTrkptArray().length > 1) {
+            speedVect[0] = speedVect[1];
+        }
 
         initComponents();
 
@@ -126,20 +130,50 @@ public class TrksegPanel extends javax.swing.JPanel {
         return sum / arr.length;
     }
 
+    private double ascent() {
+        double sum = 0.0;
+        double last = elevationVect[0];
+        for (int i = 1; i < elevationVect.length; i++) {
+            final double diff = elevationVect[i] - last;
+            if (diff > 0) {
+                sum += diff;
+            }
+            last = elevationVect[i];
+        }
+        return sum;
+    }
+
+    private double descent() {
+        double sum = 0.0;
+        double last = elevationVect[0];
+        for (int i = 1; i < elevationVect.length; i++) {
+            final double diff = elevationVect[i] - last;
+            if (diff < 0) {
+                sum += diff;
+            }
+            last = elevationVect[i];
+        }
+        return -sum;
+    }
+
     private TableModel getStatsTableModel() {
+
+        final DateFormat timeFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        final String speedFormat = "%1.1f";
+
 
         final String[][] entries = {
             {"Total Distance [km]", "" + distAcc[distAcc.length - 1]},
-            {"Start Time", "TBD"},
-            {"End Time", "TBD"},
-            {"Total Time", "TBD"},
-            {"Pace", "TBD"},
-            {"Speed Max [km/h]", "" + arrMax(speedVect)},
-            {"Speed Min [km/h]", "" + arrMin(speedVect)},
-            {"Speed Avg [km/h]", "" + arrAvg(speedVect)},
-            {"Elevation Max [m]", "" + arrMax(elevationVect)},
-            {"Elevation Min [m]", "" + arrMin(elevationVect)},
-            {"Elevation Avg [m]", "" + arrAvg(elevationVect)}
+            {"Start Time", timeFormat.format(trkseg.getTrkptArray(0).getTime().getTime())},
+            {"End Time", timeFormat.format(trkseg.getTrkptArray(trkseg.getTrkptArray().length - 1).getTime().getTime())},
+            {"Ascent [m]", "" + (int) ascent()},
+            {"Descent [m]", "" + (int) descent()},
+            {"Speed Max [km/h]", String.format(speedFormat, arrMax(speedVect))},
+            {"Speed Min [km/h]", String.format(speedFormat, arrMin(speedVect))},
+            {"Speed Avg [km/h]", String.format(speedFormat, arrAvg(speedVect))},
+            {"Elevation Max [m]", "" + (int) arrMax(elevationVect)},
+            {"Elevation Min [m]", "" + (int) arrMin(elevationVect)},
+            {"Elevation Avg [m]", "" + (int) arrAvg(elevationVect)}
         };
 
         return new AbstractTableModel() {
