@@ -8,7 +8,6 @@
  *
  * Created on Jul 4, 2011, 2:38:51 PM
  */
-
 package gpxstat.ui;
 
 import com.topografix.gpx.x1.x1.TrkType;
@@ -25,7 +24,14 @@ public class TrkPanel extends javax.swing.JPanel {
     public TrkPanel(final TrkType trk) {
         this.trk = trk;
         initComponents();
+    }
 
+    public String getTrackName() {
+        return trk.getName();
+    }
+
+    public void setTrackName(String val) {
+        trk.setName(val);
     }
 
     /** This method is called from within the constructor to
@@ -36,6 +42,7 @@ public class TrkPanel extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
+        bindingGroup = new org.jdesktop.beansbinding.BindingGroup();
 
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
@@ -50,8 +57,10 @@ public class TrkPanel extends javax.swing.JPanel {
         jLabel1.setText(resourceMap.getString("jLabel1.text")); // NOI18N
         jLabel1.setName("jLabel1"); // NOI18N
 
-        jTextField1.setText(trk.getName());
         jTextField1.setName("jTextField1"); // NOI18N
+
+        org.jdesktop.beansbinding.Binding binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, this, org.jdesktop.beansbinding.ELProperty.create("${trackName}"), jTextField1, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
 
         jLabel2.setText(resourceMap.getString("jLabel2.text")); // NOI18N
         jLabel2.setName("jLabel2"); // NOI18N
@@ -100,9 +109,9 @@ public class TrkPanel extends javax.swing.JPanel {
                     .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(76, Short.MAX_VALUE))
         );
+
+        bindingGroup.bind();
     }// </editor-fold>//GEN-END:initComponents
-
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -110,6 +119,6 @@ public class TrkPanel extends javax.swing.JPanel {
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTextField jTextField1;
     private javax.swing.JTextField jTextField2;
+    private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     // End of variables declaration//GEN-END:variables
-
 }

@@ -18,18 +18,22 @@ import org.jdesktop.application.FrameView;
 import org.jdesktop.application.TaskMonitor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
 import javax.swing.Timer;
 import javax.swing.Icon;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.event.TreeModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -168,7 +172,7 @@ public class GpxstatView extends FrameView {
                 } else if (value instanceof GpxDocumentWrapper) {
                     setText(((GpxDocumentWrapper) value).getFileName());
                 } else if (value instanceof TrkType) {
-                    setText("Track");
+                    setText("Track: " + ((TrkType) value).getName());
                 } else if (value instanceof TrksegType) {
                     setText("Track Segment");
                 } else if (value instanceof WptType) {
@@ -275,6 +279,84 @@ public class GpxstatView extends FrameView {
         });
     }
 
+    private void treePopup(MouseEvent evt) {
+        final JTree tree = (JTree) evt.getSource();
+        TreePath selPath = tree.getPathForLocation(evt.getX(), evt.getY());
+
+        if (selPath == null) {
+            return;
+        }
+        tree.setSelectionPath(selPath);
+
+
+        JPopupMenu popup = new JPopupMenu();
+
+        final Object component = selPath.getLastPathComponent();
+        final Object parent = selPath.getParentPath().getLastPathComponent();
+        if (component instanceof List) {
+        } else if (component instanceof GpxDocumentWrapper) {
+            popup.add(new JMenuItem(new AbstractAction("Close") {
+
+                public void actionPerformed(ActionEvent e) {
+                    documents.remove(component);
+                    jTree1.updateUI();
+                }
+            }));
+            popup.add(new JMenuItem(new AbstractAction("Add new Track") {
+
+                public void actionPerformed(ActionEvent e) {
+                    GpxType gpx = ((GpxDocumentWrapper) component).doc.getGpx();
+                    gpx.addNewTrk();
+                    jTree1.updateUI();
+                }
+            }));
+        } else if (component instanceof TrkType) {
+            popup.add(new JMenuItem(new AbstractAction("Delete Track") {
+
+                public void actionPerformed(ActionEvent e) {
+                    GpxType gpx = ((GpxDocumentWrapper) parent).doc.getGpx();
+                    for (int i = 0; i < gpx.getTrkArray().length; i++) {
+                        if (gpx.getTrkArray(i) == component) {
+                            gpx.removeTrk(i);
+                            break;
+                        }
+                    }
+                    jTree1.updateUI();
+                }
+            }));
+            popup.add(new JMenuItem(new AbstractAction("Add new Track Segment") {
+
+                public void actionPerformed(ActionEvent e) {
+                    ((TrkType) component).addNewTrkseg();
+                    jTree1.updateUI();
+                }
+            }));
+        } else if (component instanceof TrksegType) {
+            popup.add(new JMenuItem(new AbstractAction("Delete Track Segment") {
+
+                public void actionPerformed(ActionEvent e) {
+                    TrkType trk = ((TrkType) parent);
+                    for (int i = 0; i < trk.getTrksegArray().length; i++) {
+                        if (trk.getTrksegArray(i) == component) {
+                            trk.removeTrkseg(i);
+                            break;
+                        }
+                    }
+                    jTree1.updateUI();
+
+                }
+            }));
+        } else if (component instanceof WptType) {
+        } else {
+            throw new IllegalArgumentException("unmachted case in jTree1ValueChanged");
+        }
+
+        if (popup.getComponentCount() > 0) {
+            popup.show(tree, evt.getX(), evt.getY());
+        }
+
+    }
+
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is
@@ -299,8 +381,8 @@ public class GpxstatView extends FrameView {
         statusAnimationLabel = new javax.swing.JLabel();
         progressBar = new javax.swing.JProgressBar();
         toolBar = new javax.swing.JToolBar();
+        newToolItem = new javax.swing.JButton();
         openToolItem = new javax.swing.JButton();
-        jButton1 = new javax.swing.JButton();
 
         mainPanel.setName("mainPanel"); // NOI18N
 
@@ -311,6 +393,14 @@ public class GpxstatView extends FrameView {
         jTree1.setModel(getTreeModel());
         jTree1.setCellRenderer(getTreeCellRenderer());
         jTree1.setName("jTree1"); // NOI18N
+        jTree1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                jTree1MousePressed(evt);
+            }
+            public void mouseReleased(java.awt.event.MouseEvent evt) {
+                jTree1MouseReleased(evt);
+            }
+        });
         jTree1.addTreeSelectionListener(new javax.swing.event.TreeSelectionListener() {
             public void valueChanged(javax.swing.event.TreeSelectionEvent evt) {
                 jTree1ValueChanged(evt);
@@ -333,7 +423,7 @@ public class GpxstatView extends FrameView {
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE)
+                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 332, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -400,19 +490,19 @@ public class GpxstatView extends FrameView {
         toolBar.setRollover(true);
         toolBar.setName("toolBar"); // NOI18N
 
+        newToolItem.setAction(actionMap.get("newFile")); // NOI18N
+        newToolItem.setFocusable(false);
+        newToolItem.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        newToolItem.setName("newToolItem"); // NOI18N
+        newToolItem.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        toolBar.add(newToolItem);
+
         openToolItem.setAction(actionMap.get("openFile")); // NOI18N
         openToolItem.setFocusable(false);
         openToolItem.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         openToolItem.setName("openToolItem"); // NOI18N
         openToolItem.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         toolBar.add(openToolItem);
-
-        jButton1.setAction(actionMap.get("newFile")); // NOI18N
-        jButton1.setFocusable(false);
-        jButton1.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButton1.setName("jButton1"); // NOI18N
-        jButton1.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        toolBar.add(jButton1);
 
         setComponent(mainPanel);
         setMenuBar(menuBar);
@@ -436,13 +526,25 @@ public class GpxstatView extends FrameView {
             throw new IllegalArgumentException("unmachted case in jTree1ValueChanged");
         }
     }//GEN-LAST:event_jTree1ValueChanged
+
+    private void jTree1MousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTree1MousePressed
+        if (evt.isPopupTrigger()) {
+            treePopup(evt);
+        }
+    }//GEN-LAST:event_jTree1MousePressed
+
+    private void jTree1MouseReleased(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTree1MouseReleased
+        if (evt.isPopupTrigger()) {
+            treePopup(evt);
+        }
+    }//GEN-LAST:event_jTree1MouseReleased
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JTree jTree1;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JMenuBar menuBar;
+    private javax.swing.JButton newToolItem;
     private javax.swing.JButton openToolItem;
     private javax.swing.JProgressBar progressBar;
     private javax.swing.JLabel statusAnimationLabel;

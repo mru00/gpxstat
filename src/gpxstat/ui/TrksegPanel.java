@@ -10,6 +10,7 @@
  */
 package gpxstat.ui;
 
+import com.sun.xml.internal.ws.api.PropertySet.Property;
 import com.topografix.gpx.x1.x1.TrksegType;
 import com.topografix.gpx.x1.x1.WptType;
 import java.awt.Component;
@@ -132,6 +133,9 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     private double ascent() {
         double sum = 0.0;
+        if (elevationVect.length < 1) {
+            return 0.0;
+        }
         double last = elevationVect[0];
         for (int i = 1; i < elevationVect.length; i++) {
             final double diff = elevationVect[i] - last;
@@ -145,6 +149,9 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     private double descent() {
         double sum = 0.0;
+        if (elevationVect.length < 1) {
+            return 0.0;
+        }
         double last = elevationVect[0];
         for (int i = 1; i < elevationVect.length; i++) {
             final double diff = elevationVect[i] - last;
@@ -156,16 +163,25 @@ public class TrksegPanel extends javax.swing.JPanel {
         return -sum;
     }
 
+    private double lastOr(double[] arr, double _then) {
+        if (arr.length == 0) {
+            return _then;
+        }
+        return arr[arr.length - 1];
+    }
+
     private TableModel getStatsTableModel() {
 
         final DateFormat timeFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         final String speedFormat = "%1.1f";
 
+        final String startTime = trkseg.getTrkptArray().length > 0 ? timeFormat.format(trkseg.getTrkptArray(0).getTime().getTime()) : "";
+        final String endTime = trkseg.getTrkptArray().length > 0 ? timeFormat.format(trkseg.getTrkptArray(trkseg.getTrkptArray().length - 1).getTime().getTime()) : "";
 
         final String[][] entries = {
-            {"Total Distance [km]", "" + distAcc[distAcc.length - 1]},
-            {"Start Time", timeFormat.format(trkseg.getTrkptArray(0).getTime().getTime())},
-            {"End Time", timeFormat.format(trkseg.getTrkptArray(trkseg.getTrkptArray().length - 1).getTime().getTime())},
+            {"Total Distance [km]", "" + lastOr(distAcc, 0.0)},
+            {"Start Time", startTime},
+            {"End Time", endTime},
             {"Ascent [m]", "" + (int) ascent()},
             {"Descent [m]", "" + (int) descent()},
             {"Speed Max [km/h]", String.format(speedFormat, arrMax(speedVect))},
