@@ -13,7 +13,7 @@ import java.io.File;
  */
 public class GpxDocumentWrapper {
 
-    public final File file;
+    public File file;
     public final GpxDocument doc;
 
     public GpxDocumentWrapper(File file, GpxDocument doc) {

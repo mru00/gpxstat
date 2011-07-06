@@ -91,11 +91,13 @@
     </Component>
     <Component class="javax.swing.JTextField" name="jTextField2">
       <Properties>
-        <Property name="text" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-          <Connection code="doc.doc.getGpx().getCreator()" type="code"/>
-        </Property>
         <Property name="name" type="java.lang.String" value="jTextField2" noResource="true"/>
       </Properties>
+      <BindingProperties>
+        <BindingProperty name="text" source="Form" sourcePath="${creator}" target="jTextField2" targetPath="text" updateStrategy="0" immediately="false">
+          <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
+        </BindingProperty>
+      </BindingProperties>
     </Component>
     <Component class="javax.swing.JSeparator" name="jSeparator1">
       <Properties>

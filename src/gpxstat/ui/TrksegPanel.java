@@ -10,7 +10,6 @@
  */
 package gpxstat.ui;
 
-import com.sun.xml.internal.ws.api.PropertySet.Property;
 import com.topografix.gpx.x1.x1.TrksegType;
 import com.topografix.gpx.x1.x1.WptType;
 import java.awt.Component;
@@ -175,11 +174,16 @@ public class TrksegPanel extends javax.swing.JPanel {
         final DateFormat timeFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
         final String speedFormat = "%1.1f";
 
-        final String startTime = trkseg.getTrkptArray().length > 0 ? timeFormat.format(trkseg.getTrkptArray(0).getTime().getTime()) : "";
-        final String endTime = trkseg.getTrkptArray().length > 0 ? timeFormat.format(trkseg.getTrkptArray(trkseg.getTrkptArray().length - 1).getTime().getTime()) : "";
+        String startTime = "", endTime = "", distance = "0";
+
+        if (trkseg.getTrkptArray().length > 0) {
+            startTime = timeFormat.format(trkseg.getTrkptArray(0).getTime().getTime());
+            endTime = timeFormat.format(trkseg.getTrkptArray(trkseg.getTrkptArray().length - 1).getTime().getTime());
+            distance = "" + String.format(speedFormat, distAcc[distAcc.length - 1]);
+        }
 
         final String[][] entries = {
-            {"Total Distance [km]", "" + lastOr(distAcc, 0.0)},
+            {"Total Distance [km]", distance},
             {"Start Time", startTime},
             {"End Time", endTime},
             {"Ascent [m]", "" + (int) ascent()},
@@ -211,14 +215,17 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     private Component getElevationOverDistancePlot() {
 
-        XYSeries series = new XYSeries(0, false);
+        XYSeries series1 = new XYSeries("Elevation", false);
+        XYSeries series2 = new XYSeries("Speed", false);
         for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
-            series.add(distAcc[i], elevationVect[i]);
+            series1.add(distAcc[i], elevationVect[i]);
+            series2.add(distAcc[i], speedVect[i]);
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
-        dataset.addSeries(series);
-        JFreeChart chart = ChartFactory.createXYLineChart("Elevation over Distance", "Distance [km]", "Elevation [m]", dataset, PlotOrientation.VERTICAL, false, true, true);
+        dataset.addSeries(series1);
+        dataset.addSeries(series2);
+        JFreeChart chart = ChartFactory.createXYLineChart("Elevation over Distance", "Distance [km]", "Elevation [m]", dataset, PlotOrientation.VERTICAL, true, true, true);
 
         return new ChartPanel(chart);
     }
