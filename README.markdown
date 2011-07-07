@@ -21,3 +21,8 @@ In the 'dist' directory, execute:
 
      java -jar gpxstat.jar
 
+
+Screenshot
+----------
+
+![Screenshot 1](https://github.com/mru00/gpxstat/raw/master/doc/screenshot1.png)
