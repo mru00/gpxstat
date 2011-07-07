@@ -26,3 +26,15 @@ Screenshot
 ----------
 
 ![Screenshot 1](https://github.com/mru00/gpxstat/raw/master/doc/screenshot1.png)
+
+
+Implementation Details
+----------------------
+
+Uses JAXB to generate GPX parsing code.
+
+Uses JFreeChart to plot graphs.
+
+Uses Swing as Application Framework.
+
+Developed with NetBeans 6.9.

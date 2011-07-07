@@ -55,7 +55,8 @@ public class GpxstatView extends FrameView {
 
         initComponents();
 
-        // status bar initialization - message timeout, idle icon and busy animation, etc
+// <editor-fold defaultstate="collapsed" desc="some netbeans generated code for the swing framework">
+// status bar initialization - message timeout, idle icon and busy animation, etc
         ResourceMap resourceMap = getResourceMap();
         int messageTimeout = resourceMap.getInteger("StatusBar.messageTimeout");
         messageTimer = new Timer(messageTimeout, new ActionListener() {
@@ -110,7 +111,8 @@ public class GpxstatView extends FrameView {
                     progressBar.setValue(value);
                 }
             }
-        });
+        });// </editor-fold>
+        
     }
 
     @Action
@@ -157,6 +159,11 @@ public class GpxstatView extends FrameView {
         jTree1.updateUI();
     }
 
+// <editor-fold defaultstate="collapsed" desc="TreeModel and TreeCellRenderer">
+    /**
+     * @see GpxstatView.getTreeModel
+     * @return a TreeCellRenderer that formats the GPX TreeModel
+     */
     private TreeCellRenderer getTreeCellRenderer() {
         return new DefaultTreeCellRenderer() {
 
@@ -188,8 +195,13 @@ public class GpxstatView extends FrameView {
     }
 
     /**
+     * Provides a TreeModel for the loaded GPX files.
      *
-     * @return
+     * The tree will contain instances of the JAXB/GPX class instances directly.
+     *
+     * To format the Tree, @see getTreeCellRenderer is used.
+     *
+     * @return the TreeModel representing the GPX data.
      */
     private TreeModel getTreeModel() {
         return (new TreeModel() {
@@ -277,7 +289,10 @@ public class GpxstatView extends FrameView {
                 //throw new UnsupportedOperationException("Not supported yet.");
             }
         });
-    }
+    }// </editor-fold>
+
+
+// <editor-fold defaultstate="collapsed" desc="Tree Popup Actions">
     GpxDocumentWrapper selectedDocument;
     TrkType selectedTrack;
     TrksegType selectedTrackSegment;
@@ -363,6 +378,10 @@ public class GpxstatView extends FrameView {
         }
     };
 
+    /**
+     * Shows a popup menu for the JTree
+     * @param evt
+     */
     private void treePopup(MouseEvent evt) {
         final JTree tree = (JTree) evt.getSource();
         final TreePath selPath = tree.getPathForLocation(evt.getX(), evt.getY());
@@ -406,7 +425,7 @@ public class GpxstatView extends FrameView {
             popup.show(tree, evt.getX(), evt.getY());
         }
 
-    }
+    }// </editor-fold>
 
     /** This method is called from within the constructor to
      * initialize the form.

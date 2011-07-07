@@ -132,7 +132,7 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     private double ascent() {
         double sum = 0.0;
-        if (elevationVect.length < 1) {
+        if (elevationVect.length == 0) {
             return 0.0;
         }
         double last = elevationVect[0];
@@ -148,7 +148,7 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     private double descent() {
         double sum = 0.0;
-        if (elevationVect.length < 1) {
+        if (elevationVect.length == 0) {
             return 0.0;
         }
         double last = elevationVect[0];
@@ -160,13 +160,6 @@ public class TrksegPanel extends javax.swing.JPanel {
             last = elevationVect[i];
         }
         return -sum;
-    }
-
-    private double lastOr(double[] arr, double _then) {
-        if (arr.length == 0) {
-            return _then;
-        }
-        return arr[arr.length - 1];
     }
 
     private TableModel getStatsTableModel() {
