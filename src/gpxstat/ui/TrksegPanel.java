@@ -24,6 +24,8 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.tabbedui.VerticalLayout;
+import org.openstreetmap.gui.jmapviewer.JMapViewer;
+import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
 
 /**
  *
@@ -35,6 +37,7 @@ public class TrksegPanel extends javax.swing.JPanel {
     private final double[] distAcc;
     private final double[] speedVect;
     private final double[] elevationVect;
+    private final double[] slopeVect;
 
     /** Creates new form TrksegPanel
      * @param trkseg
@@ -45,31 +48,52 @@ public class TrksegPanel extends javax.swing.JPanel {
         distAcc = new double[trkseg.getTrkptArray().length];
         speedVect = new double[trkseg.getTrkptArray().length];
         elevationVect = new double[trkseg.getTrkptArray().length];
+        slopeVect = new double[trkseg.getTrkptArray().length];
 
         double dist = 0.0;
+        double lastEle = 0.0;
         WptType last = null;
         for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
 
             final WptType w = trkseg.getTrkptArray(i);
+            final double ele0 = w.getEle().doubleValue();
 
             if (last != null) {
-                final double dist0 = getDist(last, w);
-                dist += dist0;
-                speedVect[i] = dist0 / getTimeDiff(last, w);
+                double dist0 = getDist(last, w);
+
+                // TODO: find out how NaN can occur!
+
+                if (!Double.isNaN(dist0)) {
+                    dist += dist0;
+
+                    double speed = dist0 / getTimeDiff(last, w);
+                    double slope = (ele0 - lastEle) / (dist0 * 10); // 100*([m] - [m]) / [km]*1000
+
+                    slopeVect[i] = Double.isInfinite(slope) ? Double.NaN : slope;
+                    speedVect[i] = speed;
+                }
+
+                //System.out.println("dist0" + dist0 + " /  slope" + slopeVect[i]);
             }
 
             last = w;
+
+
             distAcc[i] = dist;
-            elevationVect[i] = w.getEle().doubleValue();
+            elevationVect[i] = ele0;
+            lastEle = elevationVect[i];
         }
 
         if (trkseg.getTrkptArray().length > 1) {
             speedVect[0] = speedVect[1];
+            slopeVect[0] = slopeVect[1];
         }
 
         initComponents();
 
         jPanel1.setLayout(new VerticalLayout());
+        jPanel1.add(getMap());
+        jPanel1.add(new JSeparator());
         jPanel1.add(getElevationOverDistancePlot());
         jPanel1.add(new JSeparator());
         jPanel1.add(getSpeedOverDistancePlot());
@@ -77,7 +101,6 @@ public class TrksegPanel extends javax.swing.JPanel {
         jPanel1.add(getSpeedOverTimePlot());
         jPanel1.add(new JSeparator());
         jPanel1.add(getDistanceOverTimePlot());
-
     }
 
     private double getDist(WptType first, WptType second) {
@@ -210,14 +233,17 @@ public class TrksegPanel extends javax.swing.JPanel {
 
         XYSeries series1 = new XYSeries("Elevation", false);
         XYSeries series2 = new XYSeries("Speed", false);
+        XYSeries series3 = new XYSeries("Slope", false);
         for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
             series1.add(distAcc[i], elevationVect[i]);
             series2.add(distAcc[i], speedVect[i]);
+            series3.add(distAcc[i], slopeVect[i]);
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(series1);
         dataset.addSeries(series2);
+        dataset.addSeries(series3);
         JFreeChart chart = ChartFactory.createXYLineChart("Elevation over Distance", "Distance [km]", "Elevation [m]", dataset, PlotOrientation.VERTICAL, true, true, true);
 
         return new ChartPanel(chart);
@@ -263,6 +289,16 @@ public class TrksegPanel extends javax.swing.JPanel {
         JFreeChart chart = ChartFactory.createXYLineChart("Distance over Time", "Time", "Distance [km]", dataset, PlotOrientation.VERTICAL, false, true, true);
 
         return new ChartPanel(chart);
+    }
+
+    private Component getMap() {
+        JMapViewer viewer = new JMapViewer();
+        for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
+            viewer.addMapMarker(new MapMarkerDot(trkseg.getTrkptArray(i).getLat().doubleValue(), trkseg.getTrkptArray(i).getLon().doubleValue()));
+        }
+        viewer.setZoom(10);
+        viewer.setDisplayToFitMapMarkers();
+        return viewer;
     }
 
     /** This method is called from within the constructor to
