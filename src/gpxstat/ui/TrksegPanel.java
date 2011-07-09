@@ -37,7 +37,7 @@ public class TrksegPanel extends javax.swing.JPanel {
     private final double[] distAcc;
     private final double[] speedVect;
     private final double[] elevationVect;
-    private final double[] slopeVect;
+    private final double[] eleGradientVect;
 
     /** Creates new form TrksegPanel
      * @param trkseg
@@ -48,7 +48,7 @@ public class TrksegPanel extends javax.swing.JPanel {
         distAcc = new double[trkseg.getTrkptArray().length];
         speedVect = new double[trkseg.getTrkptArray().length];
         elevationVect = new double[trkseg.getTrkptArray().length];
-        slopeVect = new double[trkseg.getTrkptArray().length];
+        eleGradientVect = new double[trkseg.getTrkptArray().length];
 
         double dist = 0.0;
         double lastEle = 0.0;
@@ -67,9 +67,9 @@ public class TrksegPanel extends javax.swing.JPanel {
                     dist += dist0;
 
                     double speed = dist0 / getTimeDiff(last, w);
-                    double slope = (ele0 - lastEle) / (dist0 * 10); // 100*([m] - [m]) / [km]*1000
+                    double eleGradient = (ele0 - lastEle) / (dist0 * 10); // 100*([m] - [m]) / [km]*1000
 
-                    slopeVect[i] = Double.isInfinite(slope) ? Double.NaN : slope;
+                    eleGradientVect[i] = Double.isInfinite(eleGradient) ? Double.NaN : eleGradient;
                     speedVect[i] = speed;
                 }
 
@@ -86,7 +86,7 @@ public class TrksegPanel extends javax.swing.JPanel {
 
         if (trkseg.getTrkptArray().length > 1) {
             speedVect[0] = speedVect[1];
-            slopeVect[0] = slopeVect[1];
+            eleGradientVect[0] = eleGradientVect[1];
         }
 
         initComponents();
@@ -233,11 +233,11 @@ public class TrksegPanel extends javax.swing.JPanel {
 
         XYSeries series1 = new XYSeries("Elevation", false);
         XYSeries series2 = new XYSeries("Speed", false);
-        XYSeries series3 = new XYSeries("Slope", false);
+        XYSeries series3 = new XYSeries("Elevation Gradient", false);
         for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
             series1.add(distAcc[i], elevationVect[i]);
             series2.add(distAcc[i], speedVect[i]);
-            series3.add(distAcc[i], slopeVect[i]);
+            series3.add(distAcc[i], eleGradientVect[i]);
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
