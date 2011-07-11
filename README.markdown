@@ -36,7 +36,7 @@ Uses JAXB to generate GPX parsing code.
     sudo apt-get install xmlbeans
     scomp -out gpx.jar gpx.xsd
 
-Uses JFreeChart to plot graphs.
+Uses JFreeChart http://www.jfree.org/jfreechart/samples.html to plot graphs.
 
 Uses Swing as Application Framework.
 
