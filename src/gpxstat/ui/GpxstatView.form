@@ -21,7 +21,7 @@
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="1" attributes="0">
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="jSplitPane1" pref="304" max="32767" attributes="0"/>
+                  <Component id="jSplitPane1" pref="330" max="32767" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
               </Group>
           </Group>
@@ -62,8 +62,14 @@
                     <Property name="dropMode" type="javax.swing.DropMode" editor="org.netbeans.modules.form.editors.EnumEditor">
                       <Value id="ON_OR_INSERT"/>
                     </Property>
-                    <Property name="editable" type="boolean" value="true"/>
+                    <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                      <Dimension value="[200, 0]"/>
+                    </Property>
                     <Property name="name" type="java.lang.String" value="jTree1" noResource="true"/>
+                    <Property name="scrollsOnExpand" type="boolean" value="true"/>
+                    <Property name="selectionModel" type="javax.swing.tree.TreeSelectionModel" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="getTreeSelectionModel()" type="code"/>
+                    </Property>
                   </Properties>
                   <Events>
                     <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="jTree1MousePressed"/>
@@ -73,6 +79,19 @@
                 </Component>
               </SubComponents>
             </Container>
+            <Component class="javax.swing.JLabel" name="jLabel1">
+              <Properties>
+                <Property name="horizontalAlignment" type="int" value="0"/>
+                <Property name="text" type="java.lang.String" resourceKey="jLabel1.text"/>
+                <Property name="alignmentX" type="float" value="0.5"/>
+                <Property name="name" type="java.lang.String" value="jLabel1" noResource="true"/>
+              </Properties>
+              <Constraints>
+                <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JSplitPaneSupportLayout$JSplitPaneConstraintsDescription">
+                  <JSplitPaneConstraints position="right"/>
+                </Constraint>
+              </Constraints>
+            </Component>
           </SubComponents>
         </Container>
       </SubComponents>
@@ -220,17 +239,6 @@
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout"/>
       <SubComponents>
-        <Component class="javax.swing.JButton" name="newToolItem">
-          <Properties>
-            <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">
-              <action class="gpxstat.ui.GpxstatView" id="newFile" methodName="newFile"/>
-            </Property>
-            <Property name="focusable" type="boolean" value="false"/>
-            <Property name="horizontalTextPosition" type="int" value="0"/>
-            <Property name="name" type="java.lang.String" value="newToolItem" noResource="true"/>
-            <Property name="verticalTextPosition" type="int" value="3"/>
-          </Properties>
-        </Component>
         <Component class="javax.swing.JButton" name="openToolItem">
           <Properties>
             <Property name="action" type="javax.swing.Action" editor="org.netbeans.modules.swingapp.ActionEditor">

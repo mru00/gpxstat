@@ -10,6 +10,10 @@
  */
 package gpxstat.ui;
 
+import org.jfree.ui.RectangleAnchor;
+import org.jfree.ui.TextAnchor;
+import java.awt.Color;
+import java.awt.BasicStroke;
 import com.topografix.gpx.x1.x1.TrksegType;
 import com.topografix.gpx.x1.x1.WptType;
 import java.awt.Component;
@@ -19,13 +23,16 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.plot.Marker;
+import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.tabbedui.VerticalLayout;
 import org.openstreetmap.gui.jmapviewer.JMapViewer;
-import org.openstreetmap.gui.jmapviewer.MapMarkerDot;
+import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
+import java.util.List;
 
 /**
  *
@@ -38,42 +45,52 @@ public class TrksegPanel extends javax.swing.JPanel {
     private final double[] speedVect;
     private final double[] elevationVect;
     private final double[] eleGradientVect;
+    private final JFreeChart elevationChart;
+    private Marker elevationChartMarker = null;
+    //private final int trkLength;
+    private final JMapViewer viewer;
+    //private final MapMarker[] mapMarker = new MapMarker[100];
 
     /** Creates new form TrksegPanel
      * @param trkseg
      */
     public TrksegPanel(final TrksegType trkseg) {
         this.trkseg = trkseg;
+        int trkLength = trkseg.getTrkptArray().length;
 
-        distAcc = new double[trkseg.getTrkptArray().length];
-        speedVect = new double[trkseg.getTrkptArray().length];
-        elevationVect = new double[trkseg.getTrkptArray().length];
-        eleGradientVect = new double[trkseg.getTrkptArray().length];
+        distAcc = new double[trkLength];
+        speedVect = new double[trkLength];
+        elevationVect = new double[trkLength];
+        eleGradientVect = new double[trkLength];
+        viewer = createMapViewer();
 
         double dist = 0.0;
         double lastEle = 0.0;
         WptType last = null;
-        for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
+        for (int i = 0; i < trkLength; i++) {
 
             final WptType w = trkseg.getTrkptArray(i);
             final double ele0 = w.getEle().doubleValue();
 
             if (last != null) {
-                double dist0 = getDist(last, w);
 
-                // TODO: find out how NaN can occur!
+                final double ele1 = ele0 - lastEle;
+                final double dist2d = getDist(last, w);
 
-                if (!Double.isNaN(dist0)) {
-                    dist += dist0;
+                // TODO: find out how NaN in dist2d can occur!
 
-                    double speed = dist0 / getTimeDiff(last, w);
-                    double eleGradient = (ele0 - lastEle) / (dist0 * 10); // 100*([m] - [m]) / [km]*1000
+                if (!Double.isNaN(dist2d)) {
+
+                    final double dist3d = Math.sqrt(ele1 * ele1 / 10e6 + dist2d * dist2d);
+
+                    dist += dist3d;
+
+                    final double speed = dist3d / getTimeDiff(last, w);
+                    final double eleGradient = ele1 / (dist2d * 10); // 100*([m] - [m]) / [km]*1000
 
                     eleGradientVect[i] = Double.isInfinite(eleGradient) ? Double.NaN : eleGradient;
                     speedVect[i] = speed;
                 }
-
-                //System.out.println("dist0" + dist0 + " /  slope" + slopeVect[i]);
             }
 
             last = w;
@@ -81,20 +98,23 @@ public class TrksegPanel extends javax.swing.JPanel {
 
             distAcc[i] = dist;
             elevationVect[i] = ele0;
-            lastEle = elevationVect[i];
+            lastEle = ele0;
         }
 
-        if (trkseg.getTrkptArray().length > 1) {
+        if (trkLength > 1) {
             speedVect[0] = speedVect[1];
             eleGradientVect[0] = eleGradientVect[1];
         }
 
         initComponents();
 
+
+        elevationChart = getElevationOverDistancePlot();
+
         jPanel1.setLayout(new VerticalLayout());
-        jPanel1.add(getMap());
+        jPanel1.add(viewer);
         jPanel1.add(new JSeparator());
-        jPanel1.add(getElevationOverDistancePlot());
+        jPanel1.add(new ChartPanel(elevationChart));
         jPanel1.add(new JSeparator());
         jPanel1.add(getSpeedOverDistancePlot());
         jPanel1.add(new JSeparator());
@@ -229,7 +249,7 @@ public class TrksegPanel extends javax.swing.JPanel {
 
     }
 
-    private Component getElevationOverDistancePlot() {
+    private JFreeChart getElevationOverDistancePlot() {
 
         XYSeries series1 = new XYSeries("Elevation", false);
         XYSeries series2 = new XYSeries("Speed", false);
@@ -246,7 +266,7 @@ public class TrksegPanel extends javax.swing.JPanel {
         dataset.addSeries(series3);
         JFreeChart chart = ChartFactory.createXYLineChart("Elevation over Distance", "Distance [km]", "Elevation [m]", dataset, PlotOrientation.VERTICAL, true, true, true);
 
-        return new ChartPanel(chart);
+        return chart;
     }
 
     private Component getSpeedOverDistancePlot() {
@@ -291,14 +311,79 @@ public class TrksegPanel extends javax.swing.JPanel {
         return new ChartPanel(chart);
     }
 
-    private Component getMap() {
-        JMapViewer viewer = new JMapViewer();
-        for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
-            viewer.addMapMarker(new MapMarkerDot(trkseg.getTrkptArray(i).getLat().doubleValue(), trkseg.getTrkptArray(i).getLon().doubleValue()));
+    private JMapViewer createMapViewer() {
+
+        JMapViewer newViewer = new JMapViewer();
+        final int trkLength = trkseg.getTrkptArray().length;
+
+        for (int i = 0; i < 1 && i < trkLength; i++) {
+            final MapMarker mark = new MapMarkerStart(trkseg.getTrkptArray(i));
+            newViewer.addMapMarker(mark);
         }
-        viewer.setZoom(10);
-        viewer.setDisplayToFitMapMarkers();
-        return viewer;
+
+        for (int i = 1; i < trkLength - 1; i++) {
+            final MapMarker mark = new MapMarkerBetween(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            newViewer.addMapMarker(mark);
+        }
+
+        for (int i = trkLength - 1; i > 0 && i < trkLength; i++) {
+            final MapMarker mark = new MapMarkerEnd(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            newViewer.addMapMarker(mark);
+        }
+
+
+        newViewer.setZoom(10);
+        newViewer.setDisplayToFitMapMarkers();
+        return newViewer;
+    }
+
+    public void selectWayPoint(WptType wp) {
+        // use 'wp = null' to clear selection!
+
+        WptType selected = null;
+        for (int i = 0; i < trkseg.getTrkptArray().length; i++) {
+            final WptType w = trkseg.getTrkptArray(i);
+            if (w == wp) {
+                selected = w;
+                break;
+            }
+        }
+
+        removeChartMarker();
+
+        List<AbstractMapMarker> mapMarkers = (List<AbstractMapMarker>) (List<?>) viewer.getMapMarkerList();
+        int i = 0;
+        for (AbstractMapMarker mapMarker : mapMarkers) {
+
+            boolean isSelected = mapMarker.getWaypoint() == selected;
+
+            mapMarker.setSelected(isSelected);
+            if (isSelected) {
+                addChartMarker(i);
+            }
+            i++;
+        }
+
+
+        viewer.repaint();
+    }
+
+    private void removeChartMarker() {
+        if (elevationChartMarker != null) {
+            elevationChart.getXYPlot().removeDomainMarker(elevationChartMarker);
+            elevationChartMarker = null;
+        }
+    }
+
+    private void addChartMarker(int index) {
+        elevationChartMarker = new ValueMarker(distAcc[index]);
+        elevationChartMarker.setPaint(Color.BLUE);
+        elevationChartMarker.setStroke(new BasicStroke(3));
+        elevationChartMarker.setLabel("Selected Waypoint");
+        elevationChartMarker.setLabelAnchor(RectangleAnchor.BOTTOM_RIGHT);
+        elevationChartMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
+
+        elevationChart.getXYPlot().addDomainMarker(elevationChartMarker);
     }
 
     /** This method is called from within the constructor to
@@ -399,4 +484,8 @@ public class TrksegPanel extends javax.swing.JPanel {
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTable jTable1;
     // End of variables declaration//GEN-END:variables
+
+    TrksegType getTrackseg() {
+        return trkseg;
+    }
 }

@@ -31,7 +31,7 @@ Screenshot
 Implementation Details
 ----------------------
 
-Uses JAXB to generate GPX parsing code.
+Uses JAXB to generate GPX parsing code in gpx.jar.
 
     sudo apt-get install xmlbeans
     scomp -out gpx.jar gpx.xsd
@@ -42,4 +42,4 @@ Uses Swing as Application Framework.
 
 Uses JMapViewer http://wiki.openstreetmap.org/wiki/JMapViewer to display Maps
 
-Developed with NetBeans 6.9.
+Developed for/with JDK 1.6 / NetBeans 6.9.

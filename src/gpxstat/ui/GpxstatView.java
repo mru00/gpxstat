@@ -35,25 +35,30 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
-import javax.swing.event.TreeModelListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeSelectionModel;
 import javax.swing.tree.TreePath;
 import org.apache.xmlbeans.XmlException;
+import java.text.DateFormat;
+import javax.swing.tree.DefaultTreeSelectionModel;
 
 /**
  * The application's main frame.
  */
 public class GpxstatView extends FrameView {
 
-    private final List documents = new ArrayList();
+    private final GpxTreeModel model = new GpxTreeModel();
 
     public GpxstatView(SingleFrameApplication app) {
         super(app);
 
         initComponents();
+        jTree1.setSelectionPath(jTree1.getPathForRow(1));
+
+
 
 // <editor-fold defaultstate="collapsed" desc="some netbeans generated code for the swing framework">
 // status bar initialization - message timeout, idle icon and busy animation, etc
@@ -112,7 +117,7 @@ public class GpxstatView extends FrameView {
                 }
             }
         });// </editor-fold>
-        
+
     }
 
     @Action
@@ -138,25 +143,14 @@ public class GpxstatView extends FrameView {
 
             try {
                 final GpxDocument doc = GpxDocument.Factory.parse(selectedFile);
-                documents.add(new GpxDocumentWrapper(selectedFile, doc));
-                jTree1.updateUI();
+                model.addDocument(new GpxDocumentWrapper(selectedFile, doc));
+
             } catch (IOException ex) {
                 Logger.getLogger(GpxstatApp.class.getName()).log(Level.SEVERE, null, ex);
             } catch (XmlException ex) {
                 Logger.getLogger(GpxstatApp.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-    }
-
-    @Action
-    public void newFile() {
-
-        final GpxDocument doc = GpxDocument.Factory.newInstance();
-        final GpxType gpx = GpxType.Factory.newInstance();
-        gpx.setCreator("gpxstat");
-        doc.setGpx(gpx);
-        documents.add(new GpxDocumentWrapper(null, doc));
-        jTree1.updateUI();
     }
 
 // <editor-fold defaultstate="collapsed" desc="TreeModel and TreeCellRenderer">
@@ -183,13 +177,31 @@ public class GpxstatView extends FrameView {
                 } else if (value instanceof TrksegType) {
                     setText("Track Segment");
                 } else if (value instanceof WptType) {
-                    setText("Waypoint");
+                    final DateFormat timeFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+                    WptType wp = (WptType) value;
+                    String time = timeFormat.format(wp.getTime().getTime());
+                    setText("Waypoint " + time);
                 } else {
                     throw new IllegalArgumentException("unhandled case in getTreeCellRendererComponent");
                 }
 
 
                 return this;
+            }
+        };
+    }
+
+    private TreeSelectionModel getTreeSelectionModel() {
+        return new DefaultTreeSelectionModel() {
+
+            @Override
+            public void setSelectionPath(TreePath path) {
+                // TODO: implement deselection
+                // also in tree-value changed
+
+                //boolean preselected = isPathSelected(path);
+                super.setSelectionPath(path);
+                //if (preselected) clearSelection();
             }
         };
     }
@@ -204,121 +216,61 @@ public class GpxstatView extends FrameView {
      * @return the TreeModel representing the GPX data.
      */
     private TreeModel getTreeModel() {
-        return (new TreeModel() {
-
-            public Object getRoot() {
-                return documents;
-            }
-
-            public Object getChild(Object parent, int index) {
-                if (parent instanceof List) {
-                    return ((List) parent).get(index);
-                } else if (parent instanceof GpxDocumentWrapper) {
-                    return ((GpxDocumentWrapper) parent).doc.getGpx().getTrkArray(index);
-                } else if (parent instanceof TrkType) {
-                    return ((TrkType) parent).getTrksegArray(index);
-                } else if (parent instanceof TrksegType) {
-                    return ((TrksegType) parent).getTrkptArray(index);
-                } else {
-                    throw new IllegalArgumentException("unhandled case in getChild");
-                }
-
-            }
-
-            public int getChildCount(Object parent) {
-                if (parent instanceof List) {
-                    return ((List) parent).size();
-                } else if (parent instanceof GpxDocumentWrapper) {
-                    return ((GpxDocumentWrapper) parent).doc.getGpx().sizeOfTrkArray();
-                } else if (parent instanceof TrkType) {
-                    return ((TrkType) parent).sizeOfTrksegArray();
-                } else if (parent instanceof TrksegType) {
-                    return ((TrksegType) parent).sizeOfTrkptArray();
-                } else {
-                    throw new IllegalArgumentException("unhandled case in getChildCount");
-                }
-            }
-
-            public boolean isLeaf(Object node) {
-                return (node instanceof WptType);
-            }
-
-            public void valueForPathChanged(TreePath path, Object newValue) {
-                //throw new UnsupportedOperationException("Not supported yet.");
-            }
-
-            public int getIndexOfChild(Object parent, Object child) {
-                int i = 0;
-                if (parent instanceof List) {
-                    return ((List) parent).indexOf(child);
-                } else if (parent instanceof GpxDocumentWrapper) {
-
-                    for (TrkType t : ((GpxDocumentWrapper) parent).doc.getGpx().getTrkArray()) {
-                        if (t == child) {
-                            return i;
-                        }
-                        i++;
-                    }
-                    return 0;
-                } else if (parent instanceof TrkType) {
-                    for (TrksegType t : ((TrkType) parent).getTrksegArray()) {
-                        if (t == child) {
-                            return i;
-                        }
-                        i++;
-                    }
-                    return 0;
-                } else if (parent instanceof TrksegType) {
-                    for (WptType t : ((TrksegType) parent).getTrkptArray()) {
-                        if (t == child) {
-                            return i;
-                        }
-                        i++;
-                    }
-                    return 0;
-                } else {
-                    throw new IllegalArgumentException("unhandled case in getIndexOfChild");
-                }
-            }
-
-            public void addTreeModelListener(TreeModelListener l) {
-                //throw new UnsupportedOperationException("Not supported yet.");
-            }
-
-            public void removeTreeModelListener(TreeModelListener l) {
-                //throw new UnsupportedOperationException("Not supported yet.");
-            }
-        });
+        return model;
     }// </editor-fold>
-
-
 // <editor-fold defaultstate="collapsed" desc="Tree Popup Actions">
-    GpxDocumentWrapper selectedDocument;
-    TrkType selectedTrack;
-    TrksegType selectedTrackSegment;
-    private final AbstractAction closeDocument = new AbstractAction("Close") {
+
+    private class CloseDocumentAction extends AbstractAction {
+
+        private GpxDocumentWrapper document;
+
+        public CloseDocumentAction(GpxDocumentWrapper document) {
+            super("Close");
+            this.document = document;
+        }
 
         public void actionPerformed(ActionEvent e) {
-            documents.remove(selectedDocument);
-            jTree1.updateUI();
+            final TreePath parentPath = jTree1.getSelectionPath().getParentPath();
+            jTree1.setSelectionPath(parentPath);
+
+            model.closeDocument(document);
+
         }
     };
-    private final AbstractAction saveDocument = new AbstractAction("Save") {
+
+    private class SaveDocumentAction extends AbstractAction {
+
+        private GpxDocumentWrapper document;
+
+        public SaveDocumentAction(GpxDocumentWrapper document) {
+            super("Save");
+            this.document = document;
+        }
 
         public void actionPerformed(ActionEvent e) {
-            if (selectedDocument.file == null) {
-                saveDocumentAs.actionPerformed(null);
+            final TreePath parentPath = jTree1.getSelectionPath().getParentPath();
+            jTree1.setSelectionPath(parentPath);
+            if (document.file == null) {
+                (new SaveDocumentAsAction(document)).actionPerformed(null);
                 return;
             }
             try {
-                selectedDocument.doc.save(selectedDocument.file);
+                document.doc.save(document.file);
             } catch (IOException ex) {
                 Logger.getLogger(GpxstatView.class.getName()).log(Level.SEVERE, null, ex);
             }
-            jTree1.updateUI();
+            model.fireStructureChanged(parentPath);
         }
     };
-    private final AbstractAction saveDocumentAs = new AbstractAction("Save As") {
+
+    private class SaveDocumentAsAction extends AbstractAction {
+
+        private GpxDocumentWrapper document;
+
+        public SaveDocumentAsAction(GpxDocumentWrapper document) {
+            super("Save As");
+            this.document = document;
+        }
 
         public void actionPerformed(ActionEvent e) {
             JFileChooser chooser = new JFileChooser();
@@ -328,53 +280,144 @@ public class GpxstatView extends FrameView {
             int returnVal = chooser.showSaveDialog(GpxstatView.this.getComponent());
             if (returnVal == JFileChooser.APPROVE_OPTION) {
 
-                selectedDocument.file = chooser.getSelectedFile();
+                document.file = chooser.getSelectedFile();
 
                 // delegate saving to action saveDocument
-                saveDocument.actionPerformed(null);
+                (new SaveDocumentAction(document)).actionPerformed(null);
             }
         }
     };
-    private final AbstractAction addNewTrack = new AbstractAction("Add new Track") {
 
-        public void actionPerformed(ActionEvent e) {
-            GpxType gpx = selectedDocument.doc.getGpx();
-            TrkType trk = gpx.addNewTrk();
-            trk.setName("Unnamed");
-            jTree1.updateUI();
+    private class DeleteTrackAction extends AbstractAction {
+
+        private GpxDocumentWrapper document;
+        private TrkType trk;
+
+        public DeleteTrackAction(TrkType trk, GpxDocumentWrapper document) {
+            super("Delete Track");
+            this.trk = trk;
+            this.document = document;
         }
-    };
-    private final AbstractAction deleteTrack = new AbstractAction("Delete Track") {
 
         public void actionPerformed(ActionEvent e) {
-            GpxType gpx = selectedDocument.doc.getGpx();
-            for (int i = 0; i < gpx.getTrkArray().length; i++) {
-                if (gpx.getTrkArray(i) == selectedTrack) {
-                    gpx.removeTrk(i);
-                    break;
-                }
+            GpxType gpx = document.doc.getGpx();
+
+            int trk_id = findTrackId(gpx, trk);
+            if (trk_id == -1) {
+                return;
             }
-            jTree1.updateUI();
+
+            final TreePath parentPath = jTree1.getSelectionPath().getParentPath();
+            jTree1.setSelectionPath(parentPath);
+
+            gpx.removeTrk(trk_id);
+            model.fireStructureChanged(parentPath);
         }
     };
-    private final AbstractAction addTrackSegment = new AbstractAction("Add new Track Segment") {
 
-        public void actionPerformed(ActionEvent e) {
-            selectedTrack.addNewTrkseg();
-            jTree1.updateUI();
+    private class DeleteTrackSegmentAction extends AbstractAction {
+
+        private TrkType trk;
+        private TrksegType trkseg;
+
+        public DeleteTrackSegmentAction(TrkType trk, TrksegType trkseg) {
+            super("Delete Track Segment");
+            this.trk = trk;
+            this.trkseg = trkseg;
         }
-    };
-    private final AbstractAction deleteTrackSegment = new AbstractAction("Delete Track Segment") {
 
         public void actionPerformed(ActionEvent e) {
-            for (int i = 0; i < selectedTrack.getTrksegArray().length; i++) {
-                if (selectedTrack.getTrksegArray(i) == selectedTrackSegment) {
-                    selectedTrack.removeTrkseg(i);
-                    break;
-                }
+            int seg_id = findTrackSeqId(trk, trkseg);
+            if (seg_id == -1) {
+                return;
             }
-            jTree1.updateUI();
 
+            final TreePath parentPath = jTree1.getSelectionPath().getParentPath();
+            jTree1.setSelectionPath(parentPath);
+
+            trk.removeTrkseg(seg_id);
+            model.fireStructureChanged(parentPath);
+
+        }
+    };
+
+    private int findTrackId(GpxType gpx, TrkType trk) {
+        for (int i = 0; i < gpx.getTrkArray().length; i++) {
+            if (gpx.getTrkArray(i) == trk) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findTrackSeqId(TrkType track, TrksegType seg) {
+        for (int i = 0; i < track.getTrksegArray().length; i++) {
+            if (track.getTrksegArray(i) == seg) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private int findWaypointId(TrksegType seg, WptType wpt) {
+        for (int i = 0; i < seg.getTrkptArray().length; i++) {
+            if (seg.getTrkptArray(i) == wpt) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private class SplitTrackSegmentAction extends AbstractAction {
+
+        private TrkType trk;
+        private TrksegType trkseg;
+        private WptType wpt;
+
+        public SplitTrackSegmentAction(TrkType trk, TrksegType trkseg, WptType wpt) {
+            super("Split Track Segment here");
+            this.trk = trk;
+            this.trkseg = trkseg;
+            this.wpt = wpt;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+
+            int seg_id = findTrackSeqId(trk, trkseg);
+            if (seg_id == -1) {
+                return;
+            }
+
+            int wpt_id = findWaypointId(trkseg, wpt);
+            if (wpt_id == -1) {
+                return;
+            }
+
+
+            // don't split on first position
+            if (wpt_id == 0) {
+                return;
+            }
+
+            final TreePath parentPath = jTree1.getSelectionPath().getParentPath().getParentPath();
+            jTree1.setSelectionPath(parentPath);
+
+
+            TrksegType newseg = trk.insertNewTrkseg(seg_id + 1);
+
+
+            List<WptType> remainder = new ArrayList<WptType>();
+            for (int k = 0; (k + wpt_id) < trkseg.getTrkptArray().length; k++) {
+                remainder.add(trkseg.getTrkptArray(k + wpt_id));
+            }
+
+            newseg.setTrkptArray(remainder.toArray(new WptType[0]));
+
+            for (; wpt_id < trkseg.getTrkptArray().length;) {
+                trkseg.removeTrkpt(wpt_id);
+            }
+
+            model.fireStructureChanged(parentPath);
         }
     };
 
@@ -395,28 +438,30 @@ public class GpxstatView extends FrameView {
 
         final TreePath parentPath = selPath.getParentPath();
         final Object component = selPath.getLastPathComponent();
+        Object parent = null, grandparent = null;
+        if (parentPath != null) {
+            parent = parentPath.getLastPathComponent();
 
-        final Object parent = parentPath != null ? parentPath.getLastPathComponent() : null;
+            TreePath grandparentPath = parentPath.getParentPath();
+            if (grandparentPath != null) {
+                grandparent = grandparentPath.getLastPathComponent();
+            }
+        }
 
         if (component instanceof List) {
         } else if (component instanceof GpxDocumentWrapper) {
-            selectedDocument = (GpxDocumentWrapper) component;
-            popup.add(new JMenuItem(closeDocument));
-            popup.add(new JMenuItem(saveDocument));
-            popup.add(new JMenuItem(saveDocumentAs));
-            popup.add(new JMenuItem(addNewTrack));
+            GpxDocumentWrapper selectedDocument = (GpxDocumentWrapper) component;
+            popup.add(new JMenuItem(new CloseDocumentAction(selectedDocument)));
+            popup.add(new JMenuItem(new SaveDocumentAction(selectedDocument)));
+            popup.add(new JMenuItem(new SaveDocumentAsAction(selectedDocument)));
         } else if (component instanceof TrkType) {
-            selectedDocument = (GpxDocumentWrapper) parent;
-            selectedTrack = (TrkType) component;
 
-            popup.add(new JMenuItem(deleteTrack));
-            popup.add(new JMenuItem(addTrackSegment));
+            popup.add(new JMenuItem(new DeleteTrackAction((TrkType) component, (GpxDocumentWrapper) parent)));
 
         } else if (component instanceof TrksegType) {
-            selectedTrackSegment = (TrksegType) component;
-            selectedTrack = (TrkType) parent;
-            popup.add(new JMenuItem(deleteTrackSegment));
+            popup.add(new JMenuItem(new DeleteTrackSegmentAction((TrkType) parent, (TrksegType) component)));
         } else if (component instanceof WptType) {
+            popup.add(new JMenuItem(new SplitTrackSegmentAction((TrkType) grandparent, (TrksegType) parent, (WptType) component)));
         } else {
             throw new IllegalArgumentException("unmachted case in jTree1ValueChanged");
         }
@@ -440,6 +485,7 @@ public class GpxstatView extends FrameView {
         jSplitPane1 = new javax.swing.JSplitPane();
         jScrollPane2 = new javax.swing.JScrollPane();
         jTree1 = new javax.swing.JTree();
+        jLabel1 = new javax.swing.JLabel();
         menuBar = new javax.swing.JMenuBar();
         javax.swing.JMenu fileMenu = new javax.swing.JMenu();
         javax.swing.JMenuItem exitMenuItem = new javax.swing.JMenuItem();
@@ -451,7 +497,6 @@ public class GpxstatView extends FrameView {
         statusAnimationLabel = new javax.swing.JLabel();
         progressBar = new javax.swing.JProgressBar();
         toolBar = new javax.swing.JToolBar();
-        newToolItem = new javax.swing.JButton();
         openToolItem = new javax.swing.JButton();
 
         mainPanel.setName("mainPanel"); // NOI18N
@@ -464,8 +509,10 @@ public class GpxstatView extends FrameView {
         jTree1.setCellRenderer(getTreeCellRenderer());
         jTree1.setDragEnabled(true);
         jTree1.setDropMode(javax.swing.DropMode.ON_OR_INSERT);
-        jTree1.setEditable(true);
+        jTree1.setMinimumSize(new java.awt.Dimension(200, 0));
         jTree1.setName("jTree1"); // NOI18N
+        jTree1.setScrollsOnExpand(true);
+        jTree1.setSelectionModel(getTreeSelectionModel());
         jTree1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 jTree1MousePressed(evt);
@@ -483,6 +530,13 @@ public class GpxstatView extends FrameView {
 
         jSplitPane1.setLeftComponent(jScrollPane2);
 
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(gpxstat.GpxstatApp.class).getContext().getResourceMap(GpxstatView.class);
+        jLabel1.setText(resourceMap.getString("jLabel1.text")); // NOI18N
+        jLabel1.setAlignmentX(0.5F);
+        jLabel1.setName("jLabel1"); // NOI18N
+        jSplitPane1.setRightComponent(jLabel1);
+
         javax.swing.GroupLayout mainPanelLayout = new javax.swing.GroupLayout(mainPanel);
         mainPanel.setLayout(mainPanelLayout);
         mainPanelLayout.setHorizontalGroup(
@@ -496,13 +550,12 @@ public class GpxstatView extends FrameView {
             mainPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, mainPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 304, Short.MAX_VALUE)
+                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 330, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
         menuBar.setName("menuBar"); // NOI18N
 
-        org.jdesktop.application.ResourceMap resourceMap = org.jdesktop.application.Application.getInstance(gpxstat.GpxstatApp.class).getContext().getResourceMap(GpxstatView.class);
         fileMenu.setText(resourceMap.getString("fileMenu.text")); // NOI18N
         fileMenu.setName("fileMenu"); // NOI18N
 
@@ -563,13 +616,6 @@ public class GpxstatView extends FrameView {
         toolBar.setRollover(true);
         toolBar.setName("toolBar"); // NOI18N
 
-        newToolItem.setAction(actionMap.get("newFile")); // NOI18N
-        newToolItem.setFocusable(false);
-        newToolItem.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        newToolItem.setName("newToolItem"); // NOI18N
-        newToolItem.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        toolBar.add(newToolItem);
-
         openToolItem.setAction(actionMap.get("openFile")); // NOI18N
         openToolItem.setFocusable(false);
         openToolItem.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -585,6 +631,7 @@ public class GpxstatView extends FrameView {
 
     private void jTree1ValueChanged(javax.swing.event.TreeSelectionEvent evt) {//GEN-FIRST:event_jTree1ValueChanged
         Object component = evt.getPath().getLastPathComponent();
+
         if (component instanceof List) {
             jSplitPane1.setRightComponent(new JLabel("Open Files"));
         } else if (component instanceof GpxDocumentWrapper) {
@@ -592,9 +639,25 @@ public class GpxstatView extends FrameView {
         } else if (component instanceof TrkType) {
             jSplitPane1.setRightComponent(new TrkPanel((TrkType) component));
         } else if (component instanceof TrksegType) {
-            jSplitPane1.setRightComponent(new TrksegPanel((TrksegType) component));
+
+            Component rc = jSplitPane1.getRightComponent();
+            if (!(rc instanceof TrksegPanel) || ((TrksegPanel) rc).getTrackseg() != (TrksegType) component) {
+                jSplitPane1.setRightComponent(new TrksegPanel((TrksegType) component));
+            } else {
+                ((TrksegPanel)rc).selectWayPoint(null);
+            }
         } else if (component instanceof WptType) {
-            jSplitPane1.setRightComponent(new JLabel("Waypoint"));
+            Component rc = jSplitPane1.getRightComponent();
+            Object parent = evt.getPath().getParentPath().getLastPathComponent();
+
+            if (!(rc instanceof TrksegPanel) || ((TrksegPanel) rc).getTrackseg() != (TrksegType) parent) {
+                jSplitPane1.setRightComponent(new TrksegPanel((TrksegType) parent));
+            }
+
+            if (rc != null && rc instanceof TrksegPanel) {
+                ((TrksegPanel) rc).selectWayPoint((WptType) component);
+            }
+
         } else {
             throw new IllegalArgumentException("unmachted case in jTree1ValueChanged");
         }
@@ -612,12 +675,12 @@ public class GpxstatView extends FrameView {
         }
     }//GEN-LAST:event_jTree1MouseReleased
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JTree jTree1;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JMenuBar menuBar;
-    private javax.swing.JButton newToolItem;
     private javax.swing.JButton openToolItem;
     private javax.swing.JProgressBar progressBar;
     private javax.swing.JLabel statusAnimationLabel;
