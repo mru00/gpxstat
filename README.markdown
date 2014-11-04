@@ -17,7 +17,7 @@ Program execution
 No installation is required.
 
 After downloading the application, extract all content to some directory.
-In the 'dist' directory, execute:
+In the 'store' directory, execute:
 
      java -jar gpxstat.jar
 
