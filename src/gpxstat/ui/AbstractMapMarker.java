@@ -10,9 +10,6 @@ import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import com.topografix.gpx.x1.x1.WptType;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Point;
 
 /**
  *
@@ -46,6 +43,14 @@ public abstract class AbstractMapMarker implements MapMarker {
         return tp.getLon().doubleValue();
     }
 
+    public double getEle() {
+        return tp.getEle().doubleValue();
+    }
+    
+    public boolean hasCoordinates() {
+        return tp.getLat() != null && tp.getLon() != null && tp.getEle() != null;
+    }
+    
     @Override
     public String toString() {
         return "MapMarker at " + getLat() + " " + getLon();

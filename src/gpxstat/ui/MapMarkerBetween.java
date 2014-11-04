@@ -4,7 +4,6 @@
  */
 package gpxstat.ui;
 
-import org.openstreetmap.gui.jmapviewer.interfaces.MapMarker;
 
 import com.topografix.gpx.x1.x1.WptType;
 

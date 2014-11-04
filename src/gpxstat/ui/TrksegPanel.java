@@ -68,8 +68,15 @@ public class TrksegPanel extends javax.swing.JPanel {
         double lastEle = 0.0;
         WptType last = null;
         for (int i = 0; i < trkLength; i++) {
+            
 
             final WptType w = trkseg.getTrkptArray(i);
+            
+            if (w.getEle() == null || w.getLon() == null || w.getLat()== null) {
+                distAcc[i] = speedVect[i] = elevationVect[i]=eleGradientVect[i] = Double.NaN;
+                continue;
+            }
+            
             final double ele0 = w.getEle().doubleValue();
 
             if (last != null) {
@@ -91,6 +98,12 @@ public class TrksegPanel extends javax.swing.JPanel {
                     eleGradientVect[i] = Double.isInfinite(eleGradient) ? Double.NaN : eleGradient;
                     speedVect[i] = speed;
                 }
+                else {
+                    eleGradientVect[i] = speedVect[i] = Double.NaN;
+                }
+            }
+            else {
+                eleGradientVect[i] = speedVect[i] = Double.NaN;
             }
 
             last = w;
@@ -317,17 +330,20 @@ public class TrksegPanel extends javax.swing.JPanel {
         final int trkLength = trkseg.getTrkptArray().length;
 
         for (int i = 0; i < 1 && i < trkLength; i++) {
-            final MapMarker mark = new MapMarkerStart(trkseg.getTrkptArray(i));
-            newViewer.addMapMarker(mark);
+            final AbstractMapMarker mark = new MapMarkerStart(trkseg.getTrkptArray(i));
+            if (mark.hasCoordinates())
+                newViewer.addMapMarker(mark);
         }
 
         for (int i = 1; i < trkLength - 1; i++) {
-            final MapMarker mark = new MapMarkerBetween(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            final AbstractMapMarker mark = new MapMarkerBetween(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            if (mark.hasCoordinates())
             newViewer.addMapMarker(mark);
         }
 
         for (int i = trkLength - 1; i > 0 && i < trkLength; i++) {
-            final MapMarker mark = new MapMarkerEnd(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            final AbstractMapMarker mark = new MapMarkerEnd(trkseg.getTrkptArray(i), trkseg.getTrkptArray(i));
+            if (mark.hasCoordinates())
             newViewer.addMapMarker(mark);
         }
 
